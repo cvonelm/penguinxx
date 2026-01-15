@@ -38,7 +38,6 @@ enum class Governor
     CONSERVATIVE,
     SCHEDUTIL
 };
-
 /*
  * Converts `str`, the name of a governor, such as ("powersave"), into
  * an enum value of the above enum.
@@ -82,6 +81,54 @@ bowl::Expected<TurboState, bowl::CustomError> int_to_turbo_state(uint64_t state)
  * Converts a penguinxx::TurboState into its numeric representation
  */
 uint64_t turbo_state_to_int(TurboState state);
+
+/*
+ * A CState of the processor.
+ *
+ * This is not an enum, because the available CStates differ by system
+ */
+class Cpu;
+
+class CState
+{
+    friend Cpu;
+
+public:
+    std::string get_name()
+    {
+        return name_;
+    }
+
+private:
+    explicit CState(std::string name) : name_(name)
+    {
+    }
+
+    std::string name_;
+};
+
+enum class CStateState
+{
+    ENABLED,
+    DISABLED
+};
+
+/*
+ * Converts a CStateState to a value that can be written to
+ * /sys/devices/system/cpu/cpu{cpuid}/cpuidle/state{x}/disabled
+ *
+ * Important: This setting is, unlike other interface not
+ * `enable`, but `disable`, so ENABLED is false and DISABLED is true.
+ */
+uint64_t cstate_state_to_cpuidle_disabled(CStateState state);
+
+/*
+ *
+ * Does the opposite conversion to the above function.
+ *
+ * Returns bowl::CustomError if `state` is something else than 0 or 1.
+ */
+bowl::Expected<CStateState, bowl::CustomError> cpuidle_disabled_to_cstate_state(uint64_t state);
 
 class CpuTopology;
 
@@ -294,6 +341,74 @@ public:
     }
 
     /*
+     * Get a list of the Cpu's supported cstates and their
+     * current status (enabled or disabled).
+     *
+     * The returned vector is sorted by the depth of the cstate, so
+     * result[0] is the least deep cstate and
+     * result[result.length() - 1] is the deepest cstate.
+     *
+     * Returns bowl::CustomError if reading
+     * /sys/devices/system/cpu{cpuid}/cpuidle/state{stateid}/{name, disabled}
+     *
+     * fails.
+     */
+    bowl::Expected<std::vector<std::pair<CState, CStateState>>, bowl::CustomError> get_cstates()
+    {
+        std::vector<std::pair<CState, CStateState>> res;
+
+        unsigned int cstate_number = 0;
+        std::filesystem::path cstate_path;
+
+        for (int cstate_number = 0; std::filesystem::exists(
+                 cstate_path = cpu_cpuidle_path() / fmt::format("state{}", cstate_number));
+             cstate_number++)
+        {
+            CHECK_ASSIGN(name, read_from_file<std::string>(cstate_path / "name"));
+            CHECK_ASSIGN(disabled, read_from_file<uint64_t>(cstate_path / "disable"));
+
+            CHECK_ASSIGN(cstate_state, cpuidle_disabled_to_cstate_state(disabled));
+
+            res.emplace_back(std::pair<CState, CStateState>(CState(name), cstate_state));
+        }
+        return res;
+    }
+
+    /*
+     * Sets the state of  `cstate' to `cstate_state` (enabled or disabled)
+     *
+     * This returns bowl::CustomError if `cstate` is not a known cstate or
+     * writing /sys/devices/system/cpu{cpuid}/cpuidle/state{x}/disabled fails.
+     */
+    bowl::MaybeError<bowl::CustomError> set_cstate(CState cstate, CStateState cstate_state)
+    {
+        CHECK_ASSIGN(cstate_path, get_cstate_path_for(cstate));
+
+        return write_to_file(cstate_path / "disabled",
+                             cstate_state_to_cpuidle_disabled(cstate_state));
+    }
+
+    /*
+     * Converts `name` into a CState.
+     *
+     * Returns bowl::CustomError if `name` is not a known CState
+     */
+    bowl::Expected<CState, bowl::CustomError> cstate_from_str(std::string name)
+    {
+        CHECK_ASSIGN(cstates, get_cstates());
+
+        for (auto cstate : cstates)
+        {
+            if (cstate.first.get_name() == name)
+            {
+                return std::move(cstate.first);
+            }
+        }
+
+        return bowl::Unexpected(bowl::CustomError(fmt::format("Unknown cstate: {}", name)));
+    }
+
+    /*
      * In systems supporting ACPI CPPC, this returns the
      * frequency at the nominal_perf() setting.
      *
@@ -480,6 +595,14 @@ private:
         return cpu_sysfs_path() / "acpi_cppc";
     }
 
+    /*
+     * /sys/devices/system/cpu/cpu{cpu_}/cpuidle
+     */
+    std::filesystem::path cpu_cpuidle_path()
+    {
+        return cpu_sysfs_path() / "cpuidle";
+    }
+
     static std::filesystem::path sysfs_path()
     {
         return "/sys/devices/system/cpu";
@@ -488,6 +611,31 @@ private:
     bowl::Expected<uint64_t, bowl::CustomError> sysfs_cppc_read(std::string file)
     {
         return read_from_file<uint64_t>(acpi_cppc_path() / file);
+    }
+
+    /*
+     * For CState `state`, get its path in the sysfs.
+     *
+     * Returns bowl::CustomError if no such path can be found.
+     */
+    bowl::Expected<std::filesystem::path, bowl::CustomError> get_cstate_path_for(CState state)
+    {
+        std::filesystem::path cstate_path;
+        for (int cstate_number = 0; std::filesystem::exists(
+                 cstate_path = cpu_cpuidle_path() / fmt::format("state{}", cstate_number));
+             cstate_number++)
+        {
+
+            CHECK_ASSIGN(name, read_from_file<std::string>(cstate_path / "name"));
+
+            if (state.get_name() == name)
+            {
+                return cstate_path;
+            }
+        }
+
+        return bowl::Unexpected(bowl::CustomError(fmt::format(
+            "Can not get {} path for cstate: {}", cpu_cpuidle_path().string(), state.get_name())));
     }
 
     explicit Cpu(int cpuid) : cpu_(cpuid)

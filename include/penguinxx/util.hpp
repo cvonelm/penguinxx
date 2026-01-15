@@ -94,7 +94,7 @@ inline bowl::MaybeError<bowl::CustomError> write_to_file(std::filesystem::path p
     if (!fs)
     {
         return bowl::CustomError(
-            fmt::format("Could not open {}: {}", path.c_str(), strerror(errno)));
+            fmt::format("Could not open {} for writing: {}", path.c_str(), strerror(errno)));
     }
 
     fs << data;

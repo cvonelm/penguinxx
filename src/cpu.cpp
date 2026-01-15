@@ -102,4 +102,31 @@ bowl::Expected<Cpu, bowl::CustomError> Cpu::from_int(int cpuid)
 
     return Cpu(cpuid);
 }
+
+uint64_t cstate_state_to_cpuidle_disabled(CStateState state)
+{
+    switch (state)
+    {
+    case CStateState::ENABLED:
+        return 0;
+    case CStateState::DISABLED:
+        return 1;
+    }
+    throw std::runtime_error(fmt::format("Unknown CStateState enum value \"{}\", this is an error!",
+                                         static_cast<int>(state)));
+}
+
+bowl::Expected<CStateState, bowl::CustomError> cpuidle_disabled_to_cstate_state(uint64_t state)
+{
+    switch (state)
+    {
+    case 0:
+        return CStateState::ENABLED;
+    case 1:
+        return CStateState::DISABLED;
+    }
+
+    return bowl::Unexpected(
+        bowl::CustomError(fmt::format("Unknown cstate disabled setting: {}", state)));
+}
 } // namespace penguinxx

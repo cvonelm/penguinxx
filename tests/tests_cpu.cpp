@@ -78,3 +78,21 @@ TEST_CASE("penguinxx::CpuSet::to_str")
 
     REQUIRE(cpus.to_str() == "1,2,3,4");
 }
+
+TEST_CASE("penguinxx::Cpu::get_cstates works")
+{
+    REQUIRE(penguinxx::Cpu::current().unpack_ok().get_cstates().ok());
+}
+
+TEST_CASE("penguinxx::Cpu::cstate_from_str works")
+{
+    auto cpu = penguinxx::Cpu::current().unpack_ok();
+
+    auto cstates = cpu.get_cstates().unpack_ok();
+    ;
+
+    for (auto cstate : cstates)
+    {
+        REQUIRE(cpu.cstate_from_str(cstate.first.get_name()).ok());
+    }
+}

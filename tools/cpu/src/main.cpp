@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: (c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de
 
+#include "cstate.hpp"
 #include "frequency.hpp"
 #include "governor.hpp"
 #include "turbo.hpp"
@@ -36,6 +37,10 @@ int main(int argc, char** argv)
     else if (std::string("turbo") == argv[1])
     {
         parse_turbo(argc - 1, argv + 1);
+    }
+    else if (std::string("cstate") == argv[1])
+    {
+        parse_cstate(argc - 1, argv + 1);
     }
     else if (std::string("help") == argv[1])
     {
