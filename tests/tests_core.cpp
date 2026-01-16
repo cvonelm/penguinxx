@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: (c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de
 
+#include <penguinxx/clock.hpp>
 #include <penguinxx/pthread/barrier.hpp>
 #include <penguinxx/pthread/thread.hpp>
 #include <penguinxx/util.hpp>
@@ -79,4 +80,14 @@ TEST_CASE("penguinxx::Barrier")
     auto barrier = res.unpack_ok();
 
     REQUIRE(barrier.wait().ok());
+}
+
+TEST_CASE("penguinxx::Clock")
+{
+    REQUIRE(penguinxx::Clock::gettime(penguinxx::Clocks::REALTIME).ok());
+
+    auto tp1 = penguinxx::Clock::gettime(penguinxx::Clocks::MONOTONIC_RAW).unpack_ok();
+    auto tp2 = penguinxx::Clock::gettime(penguinxx::Clocks::MONOTONIC_RAW).unpack_ok();
+
+    REQUIRE(tp2 > tp1);
 }
