@@ -4,6 +4,7 @@
 #include <penguinxx/cpu.hpp>
 #include <penguinxx/topology.hpp>
 
+#include <algorithm>
 #include <iostream>
 
 static void print_cstate_help()
@@ -12,8 +13,9 @@ static void print_cstate_help()
     std::cerr << "\n";
     std::cerr << "Available subcommands:\n";
     std::cerr << "\t- get -- Get enabled/disabled status of cstates\n";
-    std::cerr << "\t- list -- List cstates of this system, one per line\n";
-    std::cerr << "\t- set [ON/OFF] -- Set cstate state\n";
+    std::cerr << "\t- set [CSTATE],[CSTATE],... enables the comma separated list of cstates. "
+                 "Disables all cstates that were not given\n";
+    std::cerr << "\t- list -- List all cstates of this system, one per line\n";
     std::cerr << "\t- help -- Print this help\n";
 }
 
@@ -43,31 +45,75 @@ void parse_cstate(int argc, char** argv)
 
         exit(0);
     }
-    else if (std::string("enable") == argv[1])
+    else if (std::string("set") == argv[1])
     {
         if (argc < 3)
         {
-            std::cerr << "penguinxx-cpu cstate enable requires the name of a cstate!" << std::endl;
+            std::cerr << "'penguinxx-cpu cstate set' requires the name of a cstate!" << std::endl;
             std::exit(1);
         }
+
         for (auto cpu : penguinxx::CpuTopology::instance().cpus())
         {
-            auto cstate_res = cpu.cstate_from_str(argv[2]);
+            std::string cstate_str = argv[2];
+            std::stringstream ss(cstate_str);
 
-            if (!cstate_res.ok())
+            std::vector<penguinxx::CState> to_enable;
+            std::string to_enable_cstate;
+
+            while (std::getline(ss, to_enable_cstate, ','))
             {
-                std::cout << cstate_res.unpack_error().display() << std::endl;
-                std::exit(1);
+                auto parsed_cstate_res = cpu.cstate_from_str(to_enable_cstate);
+
+                if (!parsed_cstate_res.ok())
+                {
+                    std::cout << "Can not parse " << to_enable_cstate
+                              << " as a cstate name: " << parsed_cstate_res.unpack_error().display()
+                              << std::endl;
+                    exit(1);
+                }
+                to_enable.emplace_back(parsed_cstate_res.unpack_ok());
             }
-            auto cstate = cstate_res.unpack_ok();
 
-            auto res = cpu.set_cstate(cstate, penguinxx::CStateState::ENABLED);
-
-            if (!res.ok())
+            std::vector<penguinxx::CState> to_disable;
+            auto all_cstates = cpu.get_cstates().unpack_ok();
+            for (auto state : all_cstates)
             {
-                std::cerr << "Could not set cstate for CPU " << cpu.as_int() << ": "
-                          << res.unpack_error().display() << std::endl;
-                std::exit(1);
+                if (std::find(to_enable.begin(), to_enable.end(), state.first) == to_enable.end())
+                {
+                    to_disable.emplace_back(state.first);
+                }
+            }
+
+            for (auto enable_state : to_enable)
+            {
+                if (cpu.as_int() == 0)
+                {
+                    std::cout << "Enabling " << enable_state.get_name() << std::endl;
+                }
+                auto res = cpu.set_cstate(enable_state, penguinxx::CStateState::ENABLED);
+
+                if (!res.ok())
+                {
+                    std::cerr << "Could not enable cstate: " << res.unpack_error().display()
+                              << std::endl;
+                    exit(1);
+                }
+            }
+            for (auto disable_state : to_disable)
+            {
+                if (cpu.as_int() == 0)
+                {
+                    std::cout << "Disabling " << disable_state.get_name() << std::endl;
+                }
+                auto res = cpu.set_cstate(disable_state, penguinxx::CStateState::DISABLED);
+
+                if (!res.ok())
+                {
+                    std::cerr << "Could not disable cstate: " << res.unpack_error().display()
+                              << std::endl;
+                    exit(1);
+                }
             }
         }
     }
@@ -78,6 +124,19 @@ void parse_cstate(int argc, char** argv)
         for (auto cstate : cstates)
         {
             std::cout << cstate.first.get_name() << std::endl;
+        }
+    }
+    else if (std::string("staircase") == argv[1])
+    {
+        auto cstates = penguinxx::Cpu::current().unpack_ok().get_cstates().unpack_ok();
+        std::vector<std::string> tmp;
+
+        while (!cstates.empty())
+        {
+            tmp.emplace_back(cstates.front().first.get_name());
+            cstates.erase(cstates.begin());
+
+            std::cout << fmt::format("{}", fmt::join(tmp, ",")) << std::endl;
         }
     }
     else if (std::string("help") == argv[1])

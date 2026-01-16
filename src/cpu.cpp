@@ -103,7 +103,7 @@ bowl::Expected<Cpu, bowl::CustomError> Cpu::from_int(int cpuid)
     return Cpu(cpuid);
 }
 
-uint64_t cstate_state_to_cpuidle_disabled(CStateState state)
+uint64_t cstate_state_to_cpuidle_disable(CStateState state)
 {
     switch (state)
     {
@@ -116,7 +116,7 @@ uint64_t cstate_state_to_cpuidle_disabled(CStateState state)
                                          static_cast<int>(state)));
 }
 
-bowl::Expected<CStateState, bowl::CustomError> cpuidle_disabled_to_cstate_state(uint64_t state)
+bowl::Expected<CStateState, bowl::CustomError> cpuidle_disable_to_cstate_state(uint64_t state)
 {
     switch (state)
     {
@@ -127,6 +127,6 @@ bowl::Expected<CStateState, bowl::CustomError> cpuidle_disabled_to_cstate_state(
     }
 
     return bowl::Unexpected(
-        bowl::CustomError(fmt::format("Unknown cstate disabled setting: {}", state)));
+        bowl::CustomError(fmt::format("Unknown cstate disable setting: {}", state)));
 }
 } // namespace penguinxx

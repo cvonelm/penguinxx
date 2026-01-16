@@ -8,7 +8,7 @@
 
 int main(int argc, char** argv)
 {
-    if (argc != 2)
+    if (argc < 2)
     {
         std::cerr << "Missing argument pattern" << std::endl;
         std::cerr << "penguinxx-cpu-set [PATTERN_NAME]" << std::endl;
@@ -20,10 +20,28 @@ int main(int argc, char** argv)
 
     if (strcmp(argv[1], "staircase") == 0)
     {
+        int stairsize = 1;
+        if (argc == 3)
+        {
+            stairsize = std::stoi(argv[2]);
+            if (penguinxx::CpuTopology::instance().cpus().size() % stairsize != 0)
+            {
+                std::cerr << "Number of cpus (" << penguinxx::CpuTopology::instance().cpus().size()
+                          << ") is not dividable by " << stairsize << std::endl;
+                exit(1);
+            }
+        }
+
+        for (int i = 0; i < penguinxx::CpuTopology::instance().cpus().size(); i += stairsize)
+        {
+            for (int y = i; y < i + stairsize; y++)
+            {
+                set.add(penguinxx::Cpu::from_int(y).unpack_ok());
+            }
+            std::cout << set.to_str() << std::endl;
+        }
         for (const auto& cpu : penguinxx::CpuTopology::instance().cpus())
         {
-            set.add(cpu);
-            std::cout << set.to_str() << std::endl;
         }
     }
     else if (strcmp(argv[1], "all") == 0)

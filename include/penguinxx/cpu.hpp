@@ -94,6 +94,16 @@ class CState
     friend Cpu;
 
 public:
+    friend bool operator==(const CState& lhs, const CState& rhs)
+    {
+        return lhs.name_ == rhs.name_;
+    }
+
+    friend bool operator<(const CState& lhs, const CState& rhs)
+    {
+        return lhs.name_ < rhs.name_;
+    }
+
     std::string get_name()
     {
         return name_;
@@ -115,12 +125,12 @@ enum class CStateState
 
 /*
  * Converts a CStateState to a value that can be written to
- * /sys/devices/system/cpu/cpu{cpuid}/cpuidle/state{x}/disabled
+ * /sys/devices/system/cpu/cpu{cpuid}/cpuidle/state{x}/disable
  *
  * Important: This setting is, unlike other interface not
  * `enable`, but `disable`, so ENABLED is false and DISABLED is true.
  */
-uint64_t cstate_state_to_cpuidle_disabled(CStateState state);
+uint64_t cstate_state_to_cpuidle_disable(CStateState state);
 
 /*
  *
@@ -128,7 +138,7 @@ uint64_t cstate_state_to_cpuidle_disabled(CStateState state);
  *
  * Returns bowl::CustomError if `state` is something else than 0 or 1.
  */
-bowl::Expected<CStateState, bowl::CustomError> cpuidle_disabled_to_cstate_state(uint64_t state);
+bowl::Expected<CStateState, bowl::CustomError> cpuidle_disable_to_cstate_state(uint64_t state);
 
 class CpuTopology;
 
@@ -349,7 +359,7 @@ public:
      * result[result.length() - 1] is the deepest cstate.
      *
      * Returns bowl::CustomError if reading
-     * /sys/devices/system/cpu{cpuid}/cpuidle/state{stateid}/{name, disabled}
+     * /sys/devices/system/cpu{cpuid}/cpuidle/state{stateid}/{name, disable}
      *
      * fails.
      */
@@ -365,9 +375,9 @@ public:
              cstate_number++)
         {
             CHECK_ASSIGN(name, read_from_file<std::string>(cstate_path / "name"));
-            CHECK_ASSIGN(disabled, read_from_file<uint64_t>(cstate_path / "disable"));
+            CHECK_ASSIGN(disable, read_from_file<uint64_t>(cstate_path / "disable"));
 
-            CHECK_ASSIGN(cstate_state, cpuidle_disabled_to_cstate_state(disabled));
+            CHECK_ASSIGN(cstate_state, cpuidle_disable_to_cstate_state(disable));
 
             res.emplace_back(std::pair<CState, CStateState>(CState(name), cstate_state));
         }
@@ -378,14 +388,14 @@ public:
      * Sets the state of  `cstate' to `cstate_state` (enabled or disabled)
      *
      * This returns bowl::CustomError if `cstate` is not a known cstate or
-     * writing /sys/devices/system/cpu{cpuid}/cpuidle/state{x}/disabled fails.
+     * writing /sys/devices/system/cpu{cpuid}/cpuidle/state{x}/disable fails.
      */
     bowl::MaybeError<bowl::CustomError> set_cstate(CState cstate, CStateState cstate_state)
     {
         CHECK_ASSIGN(cstate_path, get_cstate_path_for(cstate));
 
-        return write_to_file(cstate_path / "disabled",
-                             cstate_state_to_cpuidle_disabled(cstate_state));
+        return write_to_file(cstate_path / "disable",
+                             cstate_state_to_cpuidle_disable(cstate_state));
     }
 
     /*
