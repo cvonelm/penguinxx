@@ -46,6 +46,10 @@ if(${PENGUINXX_TESTS})
     add_executable(tests_cpu tests/tests_cpu.cpp)
     target_link_libraries(tests_cpu PRIVATE Catch2::Catch2WithMain Penguinxx::cpu)
     catch_discover_tests(tests_cpu)
+
+    add_executable(tests_process tests/tests_process.cpp)
+    target_link_libraries(tests_process PRIVATE Catch2::Catch2WithMain Penguinxx::core)
+    catch_discover_tests(tests_process)
 endif()
 
 if(${PENGUINXX_TOOLS})
