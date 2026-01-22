@@ -367,7 +367,6 @@ public:
     {
         std::vector<std::pair<CState, CStateState>> res;
 
-        unsigned int cstate_number = 0;
         std::filesystem::path cstate_path;
 
         for (int cstate_number = 0; std::filesystem::exists(
@@ -513,6 +512,12 @@ public:
     friend bool operator>(const Cpu& lhs, const Cpu& rhs)
     {
         return lhs.cpu_ > rhs.cpu_;
+    }
+
+    friend bool operator!=(const Cpu& lhs, const Cpu& rhs)
+    {
+
+        return lhs.cpu_ != rhs.cpu_;
     }
 
 private:
