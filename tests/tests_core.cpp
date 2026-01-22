@@ -4,6 +4,7 @@
 #include <penguinxx/clock.hpp>
 #include <penguinxx/pthread/barrier.hpp>
 #include <penguinxx/pthread/thread.hpp>
+#include <penguinxx/syscalls.hpp>
 #include <penguinxx/util.hpp>
 
 #include <bowl/exception.hpp>
@@ -90,4 +91,14 @@ TEST_CASE("penguinxx::Clock")
     auto tp2 = penguinxx::Clock::gettime(penguinxx::Clocks::MONOTONIC_RAW).unpack_ok();
 
     REQUIRE(tp2 > tp1);
+}
+
+TEST_CASE("Syscalls::readlink works")
+{
+    REQUIRE(penguinxx::Syscalls::readlink("/proc/self").ok());
+}
+
+TEST_CASE("Syscalls::lstat works")
+{
+    REQUIRE(penguinxx::Syscalls::lstat("/proc/self").ok());
 }

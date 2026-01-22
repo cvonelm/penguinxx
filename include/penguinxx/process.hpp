@@ -3,10 +3,12 @@
 
 #pragma once
 
+#include <penguinxx/syscalls.hpp>
 #include <penguinxx/util.hpp>
 
 #include <bowl/error.hpp>
 #include <bowl/expected.hpp>
+#include <bowl/macros.hpp>
 
 #include <filesystem>
 
@@ -18,30 +20,88 @@ extern "C"
 
 namespace penguinxx
 {
+
+class Thread;
+
 class Process
 {
 public:
+    // Get the current Process
     static Process me()
     {
         return Process(getpid());
     }
 
-    bowl::Expected<std::string, bowl::CustomError> comm()
+    // Get the name of the given Process
+    //
+    // Returns bowl::CustomError if reading /proc/{pid}/comm failed
+    bowl::Expected<std::string, bowl::CustomError> comm() const
     {
         return read_from_file<std::string>(proc_path() / "comm");
     }
 
-    pid_t as_pid_t()
+    // Get the path to the executable of the Process.
+    //
+    // Returns bowl::CustomError if reading that path failed
+    bowl::Expected<std::filesystem::path, bowl::CustomError> exe() const
+    {
+        auto res = Syscalls::readlink(proc_path() / "exe");
+
+        if (!res.ok())
+        {
+            return bowl::Unexpected(bowl::CustomError(res.unpack_error().display()));
+        }
+
+        return res.unpack_ok();
+    }
+
+    bowl::Expected<std::vector<std::string>, bowl::CustomError> cmdline() const
+    {
+        std::vector<std::string> res;
+        // cmdline_str contains the \0 separated arguments to the process.
+        CHECK_ASSIGN(cmdline_str, read_from_file<std::string>(proc_path() / "cmdline"));
+
+        auto* cmdline_cur_cstr = cmdline_str.c_str();
+        while (cmdline_cur_cstr <= cmdline_str.c_str() + cmdline_str.size())
+        {
+            res.emplace_back(cmdline_cur_cstr);
+            cmdline_cur_cstr = cmdline_cur_cstr + strlen(cmdline_cur_cstr) + 1;
+        }
+
+        return res;
+    }
+
+    pid_t as_pid_t() const
     {
         return pid_;
     }
 
-private:
     Process(pid_t pid) : pid_(pid)
     {
     }
 
-    std::filesystem::path proc_path()
+    Thread as_thread() const;
+
+    friend bool operator<(const Process& lhs, const Process& rhs)
+    {
+
+        return lhs.pid_ < rhs.pid_;
+    }
+
+    friend bool operator==(const Process& lhs, const Process& rhs)
+    {
+
+        return lhs.pid_ == rhs.pid_;
+    }
+
+    friend bool operator!=(const Process& lhs, const Process& rhs)
+    {
+
+        return lhs.pid_ != rhs.pid_;
+    }
+
+private:
+    std::filesystem::path proc_path() const
     {
         return std::filesystem::path("/proc") / std::to_string(pid_);
     }
