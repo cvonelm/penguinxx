@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: (c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de>
 
 #include <penguinxx/cpu.hpp>
+#include <penguinxx/cpu_set.hpp>
 #include <penguinxx/numa.hpp>
 #include <penguinxx/topology.hpp>
 
@@ -58,7 +59,7 @@ TEST_CASE("Cpu::available_frequencies() works")
 
 TEST_CASE("CpuTopology works")
 {
-    penguinxx::CpuTopology::instance().cpus();
+    REQUIRE(!penguinxx::CpuTopology::instance().cpus().empty());
 }
 
 TEST_CASE("Cpu::turbo() works")
@@ -95,4 +96,11 @@ TEST_CASE("penguinxx::Cpu::cstate_from_str works")
     {
         REQUIRE(cpu.cstate_from_str(cstate.first.get_name()).ok());
     }
+}
+
+TEST_CASE("CpuSet works")
+{
+    auto cpu_set = penguinxx::CpuSet();
+
+    REQUIRE(cpu_set.empty());
 }

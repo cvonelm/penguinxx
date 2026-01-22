@@ -118,6 +118,11 @@ public:
         return cpus_.size();
     }
 
+    bool empty() const
+    {
+        return cpus_.empty();
+    }
+
     /*
      * Iterator to the underlying std::set
      */
