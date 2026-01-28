@@ -59,10 +59,30 @@ void* test_func(void* arg)
     return nullptr;
 }
 
-TEST_CASE("penguinxx::Pthread")
+int test_val = 0;
+
+void happy_lil_func(int boof)
+{
+    test_val = boof;
+}
+
+TEST_CASE("penguinxx::Pthread::create")
+{
+    uint64_t foo = 42;
+    auto res = penguinxx::Pthread::create(happy_lil_func, foo);
+
+    REQUIRE(res.ok());
+    auto pthread = res.unpack_ok();
+
+    pthread.join();
+
+    REQUIRE(test_val == 42);
+}
+
+TEST_CASE("penguinxx::Pthread::crate_raw")
 {
     uint64_t foo = 0;
-    auto res = penguinxx::Pthread::create(test_func, &foo);
+    auto res = penguinxx::Pthread::create_raw(test_func, &foo);
 
     REQUIRE(res.ok());
     auto pthread = res.unpack_ok();
