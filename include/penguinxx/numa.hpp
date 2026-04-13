@@ -25,13 +25,12 @@ public:
     NUMANodeSet(NUMANodeSet&) = delete;
     NUMANodeSet& operator=(NUMANodeSet&) = delete;
 
-    NUMANodeSet(NUMANodeSet&& other)
+    NUMANodeSet(NUMANodeSet&& other) noexcept : mask_(other.mask_)
     {
-        this->mask_ = other.mask_;
         other.mask_ = nullptr;
     }
 
-    NUMANodeSet& operator=(NUMANodeSet&& other)
+    NUMANodeSet& operator=(NUMANodeSet&& other) noexcept
     {
         this->mask_ = other.mask_;
         other.mask_ = nullptr;
@@ -47,7 +46,7 @@ public:
      */
     static bowl::Expected<NUMANodeSet, bowl::ErrnoError> of_cpu(Cpu cpu)
     {
-        int numa_node = numa_node_of_cpu(cpu.as_int());
+        int numa_node = numa_node_of_cpu(static_cast<int>(cpu.as_int()));
 
         if (numa_node == -1)
         {

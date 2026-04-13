@@ -35,14 +35,13 @@ public:
      */
     static bowl::Expected<Barrier, bowl::ErrnoError> create(int num_threads)
     {
-        Barrier res;
-
-        if (pthread_barrier_init(&res.barrier_, NULL, num_threads) != 0)
+        pthread_barrier_t barrier;
+        if (pthread_barrier_init(&barrier, nullptr, num_threads) != 0)
         {
             return bowl::Unexpected(bowl::ErrnoError());
         }
 
-        return res;
+        return { barrier };
     }
 
     /*
@@ -68,8 +67,14 @@ public:
         pthread_barrier_destroy(&barrier_);
     }
 
+    Barrier(const Barrier&) = default;
+    Barrier(Barrier&&) = default;
+
+    Barrier& operator=(const Barrier&) = default;
+    Barrier& operator=(Barrier&&) = default;
+
 private:
-    Barrier()
+    Barrier(pthread_barrier_t barrier) : barrier_(barrier)
     {
     }
 

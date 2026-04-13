@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: (c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de>
+
 #pragma once
 
 #include <bowl/error.hpp>
@@ -58,7 +61,8 @@ public:
     // Returns bowl::ErrnoError if lstat fails.
     static bowl::Expected<struct stat, bowl::ErrnoError> lstat(std::filesystem::path path)
     {
-        struct stat ret;
+        struct stat ret; // NOLINT(cppcoreguidelines-pro-type-member-init)
+
         if (::lstat(path.c_str(), &ret) == -1)
         {
             return bowl::Unexpected(bowl::ErrnoError());

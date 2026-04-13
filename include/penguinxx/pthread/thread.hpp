@@ -20,7 +20,7 @@ namespace penguinxx
 /*
  * type of the function given to Pthread::create()
  */
-typedef void* (*thread_function)(void*);
+using thread_function = void* (*)(void*);
 
 class Pthread
 {
@@ -35,38 +35,38 @@ public:
      * On error, returns ErrnoError
      */
     static bowl::Expected<Pthread, bowl::ErrnoError> create_raw(thread_function func,
-                                                                void* arg = NULL)
+                                                                void* arg = nullptr)
     {
-        Pthread res;
+        pthread_t thread = 0;
 
-        if (pthread_create(&res.thread_, NULL, func, arg) != 0)
+        if (pthread_create(&thread, nullptr, func, arg) != 0)
         {
             return bowl::Unexpected(bowl::ErrnoError());
         }
 
-        return res;
+        return Pthread{ thread };
     }
 
     template <class F, class... Args>
     static bowl::Expected<Pthread, bowl::ErrnoError> create(F&& function, Args&&... args)
     {
-        Pthread res;
+        pthread_t thread = 0;
 
-        typedef std::tuple<F, Args...> invoke_tuple;
+        using invoke_tuple = std::tuple<F, Args...>;
 
         // Pack the function and parameters into a magic tuple to
         // squeeze them through pthread's void* parameter.
         std::unique_ptr<invoke_tuple> arg = std::unique_ptr<invoke_tuple>(
             new invoke_tuple(invoke_tuple(std::move(function), std::forward<Args>(args)...)));
 
-        if (pthread_create(&res.thread_, NULL, executor<invoke_tuple>, arg.get()) != 0)
+        if (pthread_create(&thread, nullptr, executor<invoke_tuple>, arg.get()) != 0)
         {
             return bowl::Unexpected(bowl::ErrnoError());
         }
 
         arg.release();
 
-        return res;
+        return Pthread{ thread };
     }
 
     template <class invoke_tuple>
@@ -92,10 +92,7 @@ public:
      */
     static bowl::Expected<Pthread, bowl::ErrnoError> self()
     {
-        Pthread res;
-
-        res.thread_ = pthread_self();
-        return res;
+        return Pthread{ pthread_self() };
     }
 
     /*
@@ -106,7 +103,7 @@ public:
     bowl::MaybeError<bowl::ErrnoError> join()
     {
         // TODO support return typ FreshRSS e
-        if (pthread_join(thread_, NULL) != 0)
+        if (pthread_join(thread_, nullptr) != 0)
         {
             return bowl::ErrnoError();
         }
@@ -115,6 +112,10 @@ public:
     }
 
 private:
+    explicit Pthread(pthread_t thread) : thread_(thread)
+    {
+    }
+
     pthread_t thread_;
 };
 } // namespace penguinxx

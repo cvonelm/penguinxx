@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: (c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de>
+
 #pragma once
 
 #include <penguinxx/process.hpp>
@@ -27,12 +30,12 @@ public:
     //
     // Returns bowl::CustomError if reading /proc/{parent_}/task/{tid_}/comm
     // fails
-    bowl::Expected<std::string, bowl::CustomError> comm() const
+    [[nodiscard]] bowl::Expected<std::string, bowl::CustomError> comm() const
     {
         return read_from_file<std::string>(proc_path() / "comm");
     }
 
-    int as_pid_t() const
+    [[nodiscard]] int as_pid_t() const
     {
         return tid_;
     }
@@ -56,7 +59,7 @@ public:
     }
 
 private:
-    std::filesystem::path proc_path() const
+    [[nodiscard]] std::filesystem::path proc_path() const
     {
         return std::filesystem::path("/proc") / std::to_string(parent_.as_pid_t()) / "task" /
                std::to_string(tid_);

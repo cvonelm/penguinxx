@@ -31,7 +31,7 @@ public:
     /*
      * Returns a CpuSet of the CPUs in the current system.
      */
-    CpuSet cpus() const
+    [[nodiscard]] CpuSet cpus() const
     {
         return cores_;
     }

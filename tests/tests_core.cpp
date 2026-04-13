@@ -54,12 +54,12 @@ TEST_CASE("set_from_range_str")
 
 void* test_func(void* arg)
 {
-    *(uint64_t*)arg = 42;
+    *reinterpret_cast<uint64_t*>(arg) = 42; // NOLINT (cppcoreguidelines-avoid-magic-numbers)
 
     return nullptr;
 }
 
-int test_val = 0;
+int test_val = 0; // NOLINT (cppcoreguidelines-avoid-non-const-global-variables)
 
 void happy_lil_func(int boof)
 {
@@ -68,7 +68,7 @@ void happy_lil_func(int boof)
 
 TEST_CASE("penguinxx::Pthread::create")
 {
-    uint64_t foo = 42;
+    uint64_t foo = 42; // NOLINT (cppcoreguidelines-avoid-magic-numbers)
     auto res = penguinxx::Pthread::create(happy_lil_func, foo);
 
     REQUIRE(res.ok());
@@ -76,7 +76,7 @@ TEST_CASE("penguinxx::Pthread::create")
 
     pthread.join();
 
-    REQUIRE(test_val == 42);
+    REQUIRE(test_val == 42); // NOLINT (cppcoreguidelines-avoid-magic-numbers)
 }
 
 TEST_CASE("penguinxx::Pthread::crate_raw")

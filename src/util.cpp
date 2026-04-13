@@ -15,6 +15,7 @@ namespace penguinxx
 
 bowl::Expected<std::set<int64_t>, bowl::CustomError> set_from_range_str(const std::string list)
 {
+    constexpr int BASE10 = 10;
     std::set<int64_t> res;
 
     std::string part;
@@ -23,8 +24,8 @@ bowl::Expected<std::set<int64_t>, bowl::CustomError> set_from_range_str(const st
     const char* end = pos + list.length();
     while (pos < end)
     {
-        char* newpos;
-        int64_t num = strtoll(pos, &newpos, 10);
+        char* newpos = nullptr;
+        int64_t num = strtoll(pos, &newpos, BASE10);
         if (pos == newpos)
         {
             return bowl::Unexpected(bowl::CustomError(
@@ -54,7 +55,7 @@ bowl::Expected<std::set<int64_t>, bowl::CustomError> set_from_range_str(const st
 
             pos = newpos;
 
-            int64_t end = strtoll(pos, &newpos, 10);
+            int64_t end = strtoll(pos, &newpos, BASE10);
 
             if (pos == newpos)
             {

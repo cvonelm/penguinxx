@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: (c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de
 
+#include "penguinxx/clock.hpp"
+#include <ctime>
 #include <penguinxx/cpu.hpp>
 #include <penguinxx/topology.hpp>
 
@@ -69,8 +71,11 @@ void parse_frequency(int argc, char** argv)
 
         for (auto core : penguinxx::CpuTopology::instance().cpus())
         {
+            auto a = penguinxx::Clock::gettime(penguinxx::Clocks::MONOTONIC_RAW).unpack_ok();
             auto res = core.frequency(std::stoull(argv[2]));
+            auto b = penguinxx::Clock::gettime(penguinxx::Clocks::MONOTONIC_RAW).unpack_ok();
 
+            std::cerr << b - a;
             if (!res.ok())
             {
                 std::cerr << "Could not set frequency for cpu " << core.as_int() << ": "

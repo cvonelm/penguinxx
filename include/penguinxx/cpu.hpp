@@ -14,6 +14,8 @@
 #include <fmt/format.h>
 
 #include <filesystem>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include <cstdint>
@@ -110,7 +112,7 @@ public:
     }
 
 private:
-    explicit CState(std::string name) : name_(name)
+    explicit CState(std::string name) : name_(std::move(name))
     {
     }
 
@@ -162,7 +164,7 @@ public:
     /*
      * Returns the cpuid of the given Cpu
      */
-    int as_int() const
+    [[nodiscard]] int64_t as_int() const
     {
         return cpu_;
     }
@@ -200,7 +202,7 @@ public:
 
         CHECK_ASSIGN(freq, read_from_file<uint64_t>(cpufreq_path() / "scaling_cur_freq"));
 
-        return freq * 1000;
+        return freq * KHZ_TO_HZ;
     }
 
     /*
@@ -215,7 +217,7 @@ public:
     {
         auto path = cpufreq_path() / "scaling_setspeed";
 
-        return write_to_file(path, frequency / 1000);
+        return write_to_file(path, frequency / KHZ_TO_HZ);
     }
 
     /*
@@ -378,7 +380,8 @@ public:
 
             CHECK_ASSIGN(cstate_state, cpuidle_disable_to_cstate_state(disable));
 
-            res.emplace_back(std::pair<CState, CStateState>(CState(name), cstate_state));
+            res.emplace_back(std::piecewise_construct, std::forward_as_tuple(CState(name)),
+                             std::forward_as_tuple(cstate_state));
         }
         return res;
     }
@@ -427,7 +430,7 @@ public:
     {
         CHECK_ASSIGN(mhz_freq, sysfs_cppc_read("nominal_freq"));
 
-        return mhz_freq * 1000 * 1000;
+        return mhz_to_hz(mhz_freq);
     }
 
     /*
@@ -440,7 +443,7 @@ public:
     {
         CHECK_ASSIGN(mhz_freq, sysfs_cppc_read("lowest_freq"));
 
-        return mhz_freq * 1000 * 1000;
+        return mhz_to_hz(mhz_freq);
     }
 
     /*
@@ -539,7 +542,7 @@ private:
 
         for (uint64_t i : freqs)
         {
-            res.emplace_back(i * 1000);
+            res.emplace_back(i * KHZ_TO_HZ);
         }
 
         return res;
@@ -555,8 +558,8 @@ private:
      */
     bowl::Expected<std::vector<uint64_t>, bowl::CustomError> available_frequencies_cppc_cpufreq()
     {
-        uint64_t mul;
-        uint64_t div;
+        uint64_t mul = 1;
+        uint64_t div = 1;
 
         CHECK_ASSIGN(lowest_freq, lowest_freq());
         CHECK_ASSIGN(nominal_freq, nominal_freq());
@@ -653,11 +656,19 @@ private:
             "Can not get {} path for cstate: {}", cpu_cpuidle_path().string(), state.get_name())));
     }
 
-    explicit Cpu(int cpuid) : cpu_(cpuid)
+    explicit Cpu(int64_t cpuid) : cpu_(cpuid)
     {
     }
 
-    int cpu_;
+    int64_t cpu_;
+
+    uint64_t mhz_to_hz(uint64_t mhz)
+    {
+        constexpr uint64_t HZ_IN_MHZ = 1000;
+        return mhz * HZ_IN_MHZ;
+    }
+
+    static constexpr uint64_t KHZ_TO_HZ = 1000;
 };
 
 } // namespace penguinxx

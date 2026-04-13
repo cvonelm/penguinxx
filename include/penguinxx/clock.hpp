@@ -40,7 +40,7 @@ public:
      */
     static bowl::Expected<uint64_t, bowl::ErrnoError> gettime(Clocks clock)
     {
-        struct timespec sp;
+        struct timespec sp{ 0, 0 };
 
         if (clock_gettime(static_cast<int>(clock), &sp) == -1)
         {

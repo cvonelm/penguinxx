@@ -1,0 +1,16 @@
+version = 1
+
+[[annotations]]
+
+path = [
+   ".clang-format",
+   ".clang-tidy",
+   ".gitignore",
+   "AUTHORS",
+   "README.md",
+   ".pre-commit-config.yaml",
+   "cmake/penguinxx-config.cmake.in",
+   ".gitmodules",
+   ]
+SPDX-License-Identifier = "MIT"
+SPDX-FileCopyrightText = "(c) 2025 Christian von Elm <christian.von_elm@tu-dresden.de>"

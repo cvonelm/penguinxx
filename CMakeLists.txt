@@ -53,6 +53,10 @@ if(${PENGUINXX_TESTS})
     add_executable(tests_process tests/tests_process.cpp)
     target_link_libraries(tests_process PRIVATE Catch2::Catch2WithMain penguinxx::core)
     catch_discover_tests(tests_process)
+
+    add_executable(tests_fd tests/tests_fd.cpp)
+    target_link_libraries(tests_fd PRIVATE Catch2::Catch2WithMain penguinxx::core)
+    catch_discover_tests(tests_fd)
 endif()
 
 if(${PENGUINXX_TOOLS})

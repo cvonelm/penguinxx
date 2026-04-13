@@ -69,7 +69,7 @@ public:
      * This does not care for optimization currently. Every CpuSet is printed as
      * 1,2,3,...,n-1,n even if 1-n would be possible.
      */
-    std::string to_str() const
+    [[nodiscard]] std::string to_str() const
     {
         std::set<int> cpunrs_;
 
@@ -108,17 +108,17 @@ public:
     /*
      * Returns true if this CpuSet contains the given Cpu
      */
-    bool contains(Cpu cpu) const
+    [[nodiscard]] bool contains(Cpu cpu) const
     {
         return cpus_.count(cpu) == 1;
     }
 
-    size_t size() const
+    [[nodiscard]] size_t size() const
     {
         return cpus_.size();
     }
 
-    bool empty() const
+    [[nodiscard]] bool empty() const
     {
         return cpus_.empty();
     }

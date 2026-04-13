@@ -29,13 +29,13 @@ public:
     // Get the current Process
     static Process me()
     {
-        return Process(getpid());
+        return { getpid() };
     }
 
     // Get the name of the given Process
     //
     // Returns bowl::CustomError if reading /proc/{pid}/comm failed
-    bowl::Expected<std::string, bowl::CustomError> comm() const
+    [[nodiscard]] bowl::Expected<std::string, bowl::CustomError> comm() const
     {
         return read_from_file<std::string>(proc_path() / "comm");
     }
@@ -43,7 +43,7 @@ public:
     // Get the path to the executable of the Process.
     //
     // Returns bowl::CustomError if reading that path failed
-    bowl::Expected<std::filesystem::path, bowl::CustomError> exe() const
+    [[nodiscard]] bowl::Expected<std::filesystem::path, bowl::CustomError> exe() const
     {
         auto res = Syscalls::readlink(proc_path() / "exe");
 
@@ -55,7 +55,7 @@ public:
         return res.unpack_ok();
     }
 
-    bowl::Expected<std::vector<std::string>, bowl::CustomError> cmdline() const
+    [[nodiscard]] bowl::Expected<std::vector<std::string>, bowl::CustomError> cmdline() const
     {
         std::vector<std::string> res;
         // cmdline_str contains the \0 separated arguments to the process.
@@ -71,7 +71,7 @@ public:
         return res;
     }
 
-    pid_t as_pid_t() const
+    [[nodiscard]] pid_t as_pid_t() const
     {
         return pid_;
     }
@@ -80,7 +80,7 @@ public:
     {
     }
 
-    Thread as_thread() const;
+    [[nodiscard]] Thread as_thread() const;
 
     friend bool operator<(const Process& lhs, const Process& rhs)
     {
@@ -101,7 +101,7 @@ public:
     }
 
 private:
-    std::filesystem::path proc_path() const
+    [[nodiscard]] std::filesystem::path proc_path() const
     {
         return std::filesystem::path("/proc") / std::to_string(pid_);
     }
