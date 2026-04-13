@@ -49,6 +49,17 @@ public:
         return res;
     }
 
+    /* Evil, evil, evil function that should not exist */
+    /* Only way to turn a UnixDomainSocket received fd into a MemFd */
+    static MemFd from_int(int fd)
+    {
+        MemFd res;
+
+        res.fd_ = fd;
+
+        return res;
+    }
+
     bowl::MaybeError<bowl::ErrnoError> seal_grow()
     {
         if (fcntl(fd_, F_ADD_SEALS, F_SEAL_GROW) == -1)
