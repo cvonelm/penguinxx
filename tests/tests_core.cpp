@@ -5,6 +5,7 @@
 #include <penguinxx/pthread/barrier.hpp>
 #include <penguinxx/pthread/thread.hpp>
 #include <penguinxx/syscalls.hpp>
+#include <penguinxx/sysconf.hpp>
 #include <penguinxx/util.hpp>
 
 #include <bowl/exception.hpp>
@@ -121,4 +122,9 @@ TEST_CASE("Syscalls::readlink works")
 TEST_CASE("Syscalls::lstat works")
 {
     REQUIRE(penguinxx::Syscalls::lstat("/proc/self").ok());
+}
+
+TEST_CASE("Sysconf::pagesize works")
+{
+    REQUIRE(penguinxx::Sysconf::pagesize().ok());
 }
